@@ -1,12 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function App() {
   return <TurnTracker />;
 }
 
 
+const newId = (() => {
+  let id = 0;
+  return () => id++;
+})()
+function newItem(name: string): Item {
+  return [name, newId()];
+}
+type Item = [string, number]
+
+
+const savedRotation = (localStorage.getItem("rotation") as string)?.split("\n")
+  .map(item => newItem(item)) ?? [];
+
+
 function TurnTracker() {
-  const [rotation, setRotation] = useState<Item[]>([]);
+  const [rotation, setRotation] = useState(savedRotation);
+  useEffect(() => {
+    if (rotation.length === 0) localStorage.removeItem("rotation");
+    else localStorage.rotation = rotation.map(([item]) => item).join("\n");
+  }, [rotation]);
 
   function rotate() {
     setRotation([...rotation.slice(1), rotation[0]])
@@ -44,13 +62,3 @@ function TurnTracker() {
 function ListItem({ val }: { val: string }) {
   return <li>{val}</li>;
 }
-
-
-const newId = (() => {
-  let id = 0;
-  return () => id++;
-})()
-function newItem(name: string): Item {
-  return [name, newId()];
-}
-type Item = [string, number]
