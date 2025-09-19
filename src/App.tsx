@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import "./App.css";
 
 export default function App() {
   return <TurnTracker />;
@@ -15,8 +16,21 @@ function newItem(name: string): Item {
 type Item = [string, number]
 
 
-const savedRotation = (localStorage.getItem("rotation") as string)?.split("\n")
+const savedRotation = localStorage.getItem("rotation")?.split("\n")
   .map(item => newItem(item)) ?? [];
+
+const savedAutoRotate = localStorage.getItem("autoRotate") !== null;
+if (savedAutoRotate) {
+  const daysPassed = Math.floor(
+    (Date.now() - Number.parseInt(localStorage.autoRotate, 36)) / 86400000
+  );
+
+  const moving = savedRotation.splice(0, daysPassed % (savedRotation.length));
+  savedRotation.push(...moving);
+
+
+  localStorage.autoRotate = Date.now().toString(36);
+}
 
 
 function TurnTracker() {
@@ -43,26 +57,45 @@ function TurnTracker() {
   }
 
 
+  const [autoRotate, setAutoRotate] = useState(savedAutoRotate);
+  useEffect(() => {
+    if (autoRotate) localStorage.autoRotate = Date.now().toString(36);
+    else localStorage.removeItem("autoRotate");
+  }, [autoRotate]);
+
+
   return <>
     <ol>
       {rotation.map(([val, key]) => <ListItem val={val} key={key} />)}
     </ol>
 
 
-    <button onClick={rotate}>Rotate</button>
+    <fieldset disabled={autoRotate}>
+      <div>
+        <button onClick={rotate}>Rotate</button>
+      </div>
+
+      <div>
+        <label>New item:&nbsp;
+          <input
+            type="text"
+            value={newItemName}
+            onChange={e => setNewItemName(e.target.value)}
+            onKeyDown={e => { if (e.code === "Enter") addNewItem(); }}
+          />
+        </label>&nbsp;
+        <button onClick={addNewItem}>Add</button>
+      </div>
+      <ManualEdit rotation={convertRotation()} setRotation={setRotation} />
+    </fieldset>
 
     <div>
-      <label>New item:&nbsp;
-        <input
-          type="text"
-          value={newItemName}
-          onChange={e => setNewItemName(e.target.value)}
-          onKeyDown={e => { if (e.code === "Enter") addNewItem(); }}
-        />
-      </label>&nbsp;
-      <button onClick={addNewItem}>Add</button>
+      <label><input
+        type="checkbox"
+        checked={autoRotate}
+        onChange={e => setAutoRotate(e.target.checked)}
+      /> Auto Rotate</label>
     </div>
-    <ManualEdit rotation={convertRotation()} setRotation={setRotation} />
   </>;
 }
 function ListItem({ val }: { val: string }) {
