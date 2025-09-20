@@ -19,17 +19,19 @@ type Item = [string, number]
 const savedRotation = localStorage.getItem("rotation")?.split("\n")
   .map(item => newItem(item)) ?? [];
 
-const savedAutoRotate = localStorage.getItem("autoRotate") !== null;
+const savedAutoRotate =
+  !isNaN(new Date(localStorage.getItem("autoRotate") ?? NaN).valueOf());
 if (savedAutoRotate) {
   const daysPassed = Math.floor(
-    (Date.now() - Number.parseInt(localStorage.autoRotate, 36)) / 86400000
+    (Date.now() - new Date(localStorage.autoRotate).valueOf()) / 86400000
   );
 
   const moving = savedRotation.splice(0, daysPassed % (savedRotation.length));
   savedRotation.push(...moving);
 
 
-  localStorage.autoRotate = Date.now().toString(36);
+  // redundancy
+  localStorage.autoRotate = new Date().toDateString();
 }
 
 
@@ -59,7 +61,7 @@ function TurnTracker() {
 
   const [autoRotate, setAutoRotate] = useState(savedAutoRotate);
   useEffect(() => {
-    if (autoRotate) localStorage.autoRotate = Date.now().toString(36);
+    if (autoRotate) localStorage.autoRotate = new Date().toDateString();
     else localStorage.removeItem("autoRotate");
   }, [autoRotate]);
 
@@ -70,25 +72,9 @@ function TurnTracker() {
     </ol>
 
 
-    <fieldset disabled={autoRotate}>
-      <div>
-        <button onClick={rotate}>Rotate</button>
-      </div>
-
-      <div>
-        <label>New item:&nbsp;
-          <input
-            type="text"
-            value={newItemName}
-            onChange={e => setNewItemName(e.target.value)}
-            onKeyDown={e => { if (e.code === "Enter") addNewItem(); }}
-          />
-        </label>&nbsp;
-        <button onClick={addNewItem}>Add</button>
-      </div>
-      <ManualEdit rotation={convertRotation()} setRotation={setRotation} />
-    </fieldset>
-
+    <div>
+      <button onClick={rotate} disabled={autoRotate}>Rotate</button>
+    </div>
     <div>
       <label><input
         type="checkbox"
@@ -96,6 +82,19 @@ function TurnTracker() {
         onChange={e => setAutoRotate(e.target.checked)}
       /> Auto Rotate</label>
     </div>
+
+    <div>
+      <label>New item:&nbsp;
+        <input
+          type="text"
+          value={newItemName}
+          onChange={e => setNewItemName(e.target.value)}
+          onKeyDown={e => { if (e.code === "Enter") addNewItem(); }}
+        />
+      </label>&nbsp;
+      <button onClick={addNewItem}>Add</button>
+    </div>
+    <ManualEdit rotation={convertRotation()} setRotation={setRotation} />
   </>;
 }
 function ListItem({ val }: { val: string }) {
