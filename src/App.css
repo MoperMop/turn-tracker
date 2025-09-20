@@ -1,8 +1,7 @@
-fieldset {
-  border: none;
-  padding: 0;
-}
-
 div {
   margin-block-start: 0.5em;
+}
+
+ol > li:first-child {
+  font-weight: bold;
 }
